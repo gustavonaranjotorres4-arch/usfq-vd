@@ -1,0 +1,210 @@
+---
+title: '**Participación en clase 2**'
+jupyter: python3
+---
+
+
+**Objetivo:**
+
+Desarrollar la capacidad de seleccionar el tipo adecuado de gráfico para responder preguntas sobre datos categóricos y cuantitativos.
+
+>URL del dataset: [https://raw.githubusercontent.com/erickedu85/dataset/master/penguins.csv]
+
+ 
+
+
+# **Preguntas**
+
+## **Pregunta 1 – Distribución por grupo**
+
+¿Cómo varía la masa corporal (body_mass_g) entre las diferentes especies y islas de los pingüinos?
+
+¿Qué tipo de gráfico usarías para comparar la distribución de una variable cuantitativa entre varios grupos definidos por dos variables categóricas?
+¿Cómo facilitarías la comparación entre subgrupos sin sobrecargar un solo gráfico?
+Implementa tu elección y analiza visualmente qué patrones se observan.
+ 
+
+```{python}
+import pandas as pd
+import altair as alt
+```
+
+```{python}
+penguins=pd.read_csv("https://raw.githubusercontent.com/erickedu85/dataset/master/penguins.csv")
+penguins.head()
+```
+
+```{python}
+penguins.info()
+```
+
+```{python}
+penguins.dropna(inplace=True)
+```
+
+```{python}
+penguins['species'].unique()
+```
+
+```{python}
+penguins['island'].unique()
+```
+
+```{python}
+penguins['sex'].unique()
+```
+
+```{python}
+penguins[penguins['sex']=='.']
+```
+
+```{python}
+penguins.drop(penguins[penguins['sex']=='.'].index, inplace=True)
+```
+
+```{python}
+penguins['sex'].unique()
+```
+
+```{python}
+boxplot = alt.Chart(penguins).mark_boxplot().encode(
+    alt.X("species:N", title=None, axis=alt.Axis(labelAngle=0)),
+    alt.Y("body_mass_g:Q", title="Body Mass (g)"),
+    alt.Color("species:N", title="Species")
+).properties(
+    width=200,
+    height=300
+).facet( # facet hace que se creen gráficos separados para cada categoría de la variable especificada
+    column=alt.Column("island:N", title="Island")
+)
+
+boxplot
+```
+
+```{python}
+alt.Chart(penguins).mark_bar().encode(
+    x=alt.X("island:N", title="Island", axis=alt.Axis(labelAngle=0)),
+    y=alt.Y("mean(body_mass_g):Q", title="Average Body Mass (g)"),
+    color=alt.Color("species:N", title="Species"),
+    xOffset="species:N"
+).properties(
+    width=500,
+    height=350
+)
+```
+
+## **Pregunta 2 – Ubicación de especies**
+
+¿Qué especies de pingüinos se encuentran en cada isla? ¿Alguna especie está presente solo en una isla?
+
+¿Qué técnica visual te permitiría mostrar esta relación de forma compacta y clara?
+Aplica una visualización que permita identificar asociaciones entre categorías.
+Interpreta el resultado.
+ 
+
+```{python}
+alt.Chart(penguins).mark_bar().encode(
+    x=alt.X("island:N", title="Island", axis=alt.Axis(labelAngle=0)),
+    y=alt.Y("count():Q", title="Count of penguins"),
+    color=alt.Color("species:N", title="Species")
+).properties(
+    width=500,
+    height=350
+)
+```
+
+
+## **Pregunta 3 – Diferencias entre sexos**
+
+¿Existen diferencias notables entre machos y hembras en alguna característica cuantitativa?
+
+Elige una variable cuantitativa adecuada (como culmen_length_mm, culmen_depth_mm, etc.)
+Justifica el gráfico que usarías para comparar distribuciones entre dos categorías.
+
+```{python}
+penguins
+```
+
+```{python}
+boxplot_culmen_length = alt.Chart(penguins).mark_boxplot().encode(
+    alt.X("sex:N", title=None, axis=alt.Axis(labelAngle=0)),
+    alt.Y("culmen_length_mm:Q", title="Culmen Length (mm)"),
+    alt.Color("sex:N", title="Sex")
+).properties(
+    width=200,
+    height=350
+).facet( # facet hace que se creen gráficos separados para cada categoría de la variable especificada
+    column=alt.Column("species:N", title="Species")
+)
+
+boxplot_culmen_length
+```
+
+```{python}
+boxplot_culmen_depth = alt.Chart(penguins).mark_boxplot().encode(
+    alt.X("sex:N", title=None, axis=alt.Axis(labelAngle=0)),
+    alt.Y("culmen_depth_mm:Q", title="Culmen Depth (mm)"),
+    alt.Color("sex:N", title="Sex")
+).properties(
+    width=200,
+    height=350
+).facet( # facet hace que se creen gráficos separados para cada categoría de la variable especificada
+    column=alt.Column("species:N", title="Species")
+)
+
+boxplot_culmen_depth
+```
+
+```{python}
+boxplot_flipper_length = alt.Chart(penguins).mark_boxplot().encode(
+    alt.X("sex:N", title=None, axis=alt.Axis(labelAngle=0)),
+    alt.Y("flipper_length_mm:Q", title="Flipper Length (mm)"),
+    alt.Color("sex:N", title="Sex")
+).properties(
+    width=200,
+    height=350
+).facet( # facet hace que se creen gráficos separados para cada categoría de la variable especificada
+    column=alt.Column("species:N", title="Species")
+)
+
+boxplot_flipper_length
+```
+
+```{python}
+boxplot_bodymass_sex = alt.Chart(penguins).mark_boxplot().encode(
+    alt.X("sex:N", title=None, axis=alt.Axis(labelAngle=0)),
+    alt.Y("body_mass_g:Q", title="Body Mass (g)"),
+    alt.Color("sex:N", title="Sex")
+).properties(
+    width=200,
+    height=350
+).facet( # facet hace que se creen gráficos separados para cada categoría de la variable especificada
+    column=alt.Column("species:N", title="Species")
+)
+
+boxplot_bodymass_sex
+```
+
+```{python}
+alt.Chart(penguins).mark_bar().encode(
+    x=alt.X("sex:N", title="Sex", axis=alt.Axis(labelAngle=0)),
+    y=alt.Y("count():Q", title="Count of Penguins"),
+    color=alt.Color("species:N", title="Species"),
+    xOffset="species:N"
+).properties(
+    width=500,
+    height=350
+).interactive()
+```
+
+```{python}
+alt.Chart(penguins).mark_bar().encode(
+    x=alt.X("island:N", title="Island"),
+    y=alt.Y("count():Q", title="Count of Penguins"),
+    color=alt.Color("sex:N", title="Sex"),
+    xOffset="sex:N"
+).facet(
+    column=alt.Column("species:N", title="Species")
+)
+```
+

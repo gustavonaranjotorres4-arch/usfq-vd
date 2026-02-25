@@ -67,31 +67,120 @@ penguins['sex'].unique()
 ```
 
 ```{python}
-boxplot = alt.Chart(penguins).mark_boxplot().encode(
-    alt.X("species:N", title=None, axis=alt.Axis(labelAngle=0)),
-    alt.Y("body_mass_g:Q", title="Body Mass (g)"),
-    alt.Color("species:N", title="Species")
+# configuracion para graficos global
+alt.themes.enable('default')
+
+custom_theme = {
+    "config": {
+        "title": {
+            "fontSize": 18,
+            "fontWeight": "bold",
+            "anchor": "start"
+        },
+        "axis": {
+            "labelFontSize": 12,
+            "titleFontSize": 14,
+            "gridx": False,
+            "gridy": True,
+        },
+        "legend": {
+            "labelFontSize": 12,
+            "titleFontSize": 13
+        },
+        "view": {
+            "stroke": "transparent"
+        }
+    }
+}
+
+alt.themes.register("custom_theme", lambda: custom_theme)
+alt.themes.enable("custom_theme")
+```
+
+```{python}
+title = alt.Title(
+    text="Distribution of Body Mass by Species and Island",
+    subtitle="Boxplots showing median and variability of penguin body mass (g)",
+    anchor="start"
+)
+
+base = alt.Chart(penguins).mark_boxplot(size=40).encode(
+    x=alt.X(
+        "species:N",
+        title=None,
+        axis=alt.Axis(labelAngle=0),
+        sort=["Adelie", "Chinstrap", "Gentoo"]
+    ),
+    y=alt.Y(
+        "body_mass_g:Q",
+        title="Body Mass (g)",
+        scale=alt.Scale(domain=[2500, 6500]),
+        axis=alt.Axis(format=",.0f")
+    ),
+    color=alt.Color("species:N")
 ).properties(
-    width=200,
-    height=300
-).facet( # facet hace que se creen gráficos separados para cada categoría de la variable especificada
-    column=alt.Column("island:N", title="Island")
+    width=220,
+    height=350
+)
+
+boxplot = base.facet(
+    column=alt.Column(
+        "island:N",
+        title="Island"
+    )
+).properties(
+    title=title
 )
 
 boxplot
 ```
 
 ```{python}
-alt.Chart(penguins).mark_bar().encode(
-    x=alt.X("island:N", title="Island", axis=alt.Axis(labelAngle=0)),
-    y=alt.Y("mean(body_mass_g):Q", title="Average Body Mass (g)"),
-    color=alt.Color("species:N", title="Species"),
+title = alt.Title(
+    text="Average Body Mass by Species and Island",
+    subtitle="Grouped bar chart showing mean body mass (g)",
+    anchor="start"
+)
+
+text = alt.Chart(penguins).mark_text(
+    dy=-5,
+    size=10
+).encode(
+    x="island:N",
+    y="mean(body_mass_g):Q",
+    text=alt.Text("mean(body_mass_g):Q", format=",.0f"),
+    xOffset="species:N",
+    color='species:N'
+)
+
+chart = alt.Chart(penguins).mark_bar(size=35).encode(
+    x=alt.X(
+        "island:N",
+        title="Island",
+        axis=alt.Axis(labelAngle=0)
+    ),
+    y=alt.Y(
+        "mean(body_mass_g):Q",
+        title="Average Body Mass (g)",
+        scale=alt.Scale(domain=[3000, 5500]),
+        axis=alt.Axis(format=",.0f")
+    ),
+    color=alt.Color(
+        "species:N",
+        title="Species",
+        scale=alt.Scale(scheme="tableau10")
+    ),
     xOffset="species:N"
 ).properties(
     width=500,
-    height=350
+    height=350,
+    title=title
 )
+
+chart+text
 ```
+
+>La masa corporal de los pingüinos varía principalmente según la especie y, en menor medida, según la isla. A partir de los boxplots facetados por isla, se observa que **Gentoo** presenta consistentemente las mayores masas corporales, especialmente en Biscoe, donde alcanza los valores más altos tanto en mediana como en promedio. **Adelie** muestra las masas más bajas y una distribución relativamente estable entre las tres islas (Biscoe, Dream y Torgersen), lo que sugiere poca variación geográfica dentro de esta especie. **Chinstrap**, presente principalmente en Dream, se ubica en un rango intermedio y presenta cierta superposición con Adelie, aunque con tendencia a valores ligeramente mayores. Para comparar adecuadamente la distribución de una variable cuantitativa entre grupos definidos por dos variables categóricas, el gráfico más apropiado es un **boxplot facetado**, ya que permite visualizar mediana, dispersión y posibles valores atípicos sin sobrecargar un solo panel. El uso de faceting por isla facilita la comparación entre subgrupos manteniendo una escala común en el eje Y y evitando la saturación visual. En conjunto, los patrones observados indican que la variación en masa corporal está explicada principalmente por diferencias entre especies más que por la ubicación geográfica.
 
 ## **Pregunta 2 – Ubicación de especies**
 
@@ -103,15 +192,42 @@ Interpreta el resultado.
  
 
 ```{python}
-alt.Chart(penguins).mark_bar().encode(
-    x=alt.X("island:N", title="Island", axis=alt.Axis(labelAngle=0)),
-    y=alt.Y("count():Q", title="Count of penguins"),
-    color=alt.Color("species:N", title="Species")
-).properties(
-    width=500,
-    height=350
+title = alt.Title(
+    text="Penguin Count by Species and Island",
+    subtitle="Grouped bar chart showing number of individuals",
+    anchor="start"
 )
+
+base = alt.Chart(penguins).encode(
+    x=alt.X("island:N", title="Island"),
+    y=alt.Y("count():Q", title="Count of Penguins",scale=alt.Scale(domain=[0, 140])),
+    color=alt.Color("species:N", title="Species"),
+    xOffset="species:N"   
+)
+
+bars = base.mark_bar(size=35)
+
+labels = base.mark_text(
+    dy=-6,
+    size=11,
+    #fontWeight="bold"
+).encode(
+    text="count():Q",
+    color='species:N'
+)
+
+chart = (bars + labels).properties(
+    width=500,
+    height=350,
+    title=title
+)
+
+chart
 ```
+
+> Las especies de pingüinos no están distribuidas uniformemente entre las islas. **Adelie** es la única especie presente en las tres islas (Biscoe, Dream y Torgersen), lo que indica una mayor adaptabilidad geográfica. **Chinstrap** aparece únicamente en la isla Dream, mientras que **Gentoo** se encuentra exclusivamente en Biscoe. Por lo tanto, sí existen especies restringidas a una sola isla: Chinstrap y Gentoo muestran distribución exclusiva, lo que evidencia una asociación clara entre especie y ubicación.
+
+> La técnica visual más adecuada para mostrar esta relación categórica de forma compacta y clara es un **gráfico de barras agrupadas o un mapa de calor (heatmap) de conteos**, ya que permite identificar rápidamente la presencia, ausencia y magnitud de individuos por combinación de especie e isla. Este tipo de visualización facilita detectar asociaciones entre categorías sin sobrecargar la información. La interpretación del gráfico confirma que la distribución por isla no es aleatoria, sino que existe una fuerte relación entre especie y ubicación geográfica, con Adelie ampliamente distribuida y las otras especies concentradas en islas específicas.
 
 
 ## **Pregunta 3 – Diferencias entre sexos**
@@ -122,89 +238,337 @@ Elige una variable cuantitativa adecuada (como culmen_length_mm, culmen_depth_mm
 Justifica el gráfico que usarías para comparar distribuciones entre dos categorías.
 
 ```{python}
-penguins
+# 1. Ingesta de datos
+URL = "https://raw.githubusercontent.com/erickedu85/dataset/master/penguins.csv"
+df = pd.read_csv(URL)
+
+# 2. Definición de variables y limpieza
+variables_cuantitativas = [
+    'culmen_length_mm', 
+    'culmen_depth_mm', 
+    'flipper_length_mm', 
+    'body_mass_g'
+]
+
+# Limpiamos NAs solo de las columnas que vamos a usar
+df_clean = df.dropna(subset=variables_cuantitativas + ['sex']).copy()
+df_clean['sex'] = df_clean['sex'].str.upper()
+df_clean = df_clean[df_clean['sex'].isin(['MALE', 'FEMALE'])] 
+
+# Diccionario para títulos elegantes
+titulos_vars = {
+    'culmen_length_mm': 'Long. del Culmen (mm)',
+    'culmen_depth_mm': 'Prof. del Culmen (mm)',
+    'flipper_length_mm': 'Long. de Aleta (mm)',
+    'body_mass_g': 'Masa Corporal (g)'
+}
+
+# 3. Construcción iterativa de Split Violins
+graficos_individuales = []
+
+for var in variables_cuantitativas:
+    # Arquitectura del Split Violin: Calculamos densidad y volvemos negativo a FEMALE
+    chart = alt.Chart(df_clean).transform_density(
+        var,
+        as_=[var, 'density'],
+        groupby=['sex']
+    ).transform_calculate(
+        # Lógica ternaria: Si es hembra, densidad negativa (izquierda), si es macho, positiva (derecha)
+        densidad_dividida="datum.sex == 'FEMALE' ? -datum.density : datum.density"
+    ).mark_area(orient='horizontal').encode(
+        x=alt.X('densidad_dividida:Q', 
+                title=None, 
+                axis=alt.Axis(labels=False, values=[0], grid=False, ticks=False)),
+        y=alt.Y(f'{var}:Q', title=None, scale=alt.Scale(zero=False)),
+        color=alt.Color('sex:N', 
+                        scale=alt.Scale(domain=['FEMALE', 'MALE'], range=['#d95f02', '#1b9e77']),
+                        legend=alt.Legend(title='Sexo', orient='bottom', direction='horizontal'))
+    ).properties(
+        width=180, 
+        height=350,
+        title=alt.TitleParams(text=titulos_vars[var], anchor='middle', fontSize=14)
+    )
+    graficos_individuales.append(chart)
+
+# 4. Concatenación y Configuración Global
+chart_final = alt.hconcat(*graficos_individuales).properties(
+    title=alt.TitleParams(
+        text='Dimorfismo Sexual en Pingüinos: Múltiples Características',
+        anchor='middle',
+        fontSize=20,
+        offset=20
+    )
+).resolve_scale(
+    # ESTO ES VITAL: Permite que cada gráfico tenga su propia escala Y (mm vs gramos)
+    y='independent', 
+    x='independent'
+).configure_view(
+    stroke=None
+).configure_axis(
+    labelFontSize=12
+)
+chart_final
 ```
 
+
+### Respuestas al Análisis de Diferencias entre Sexos (Múltiples Variables)
+
+**1. ¿Existen diferencias notables entre machos y hembras en alguna característica cuantitativa?**
+Sí, el dimorfismo sexual es transversal a todas las métricas físicas. Al observar la comparación, los machos (verde, a la derecha) presentan densidades desplazadas hacia valores superiores en las cuatro características analizadas. La mayor separación visual (donde los picos de densidad están más distanciados) se da en la **Masa Corporal** y en la **Profundidad del Culmen**, mientras que en la **Longitud de la Aleta**, las distribuciones muestran un mayor grado de solapamiento.
+
+**2. Elige una variable cuantitativa adecuada.**
+En lugar de aislar una sola, evaluamos el conjunto anatómico (`culmen_length_mm`, `culmen_depth_mm`, `flipper_length_mm`, `body_mass_g`). Esto nos permite concluir de manera holística que el dimorfismo sexual no es un rasgo aislado de una extremidad, sino una característica estructural de la biología de la especie.
+
+**3. Justifica el gráfico que usarías para comparar distribuciones entre dos categorías.**
+Implementamos una arquitectura avanzada conocida como **Split Violin Plot (Gráfico de Violín Dividido) en un diseño concatenado (Trellis/Grid)**. 
+* **Justificación analítica:** Al partir el violín a la mitad (Hembras a la izquierda, Machos a la derecha del eje 0), maximizamos el espacio visual y eliminamos la necesidad de separar los grupos en columnas distintas, permitiendo una comparación literal "espalda con espalda". Además, concatenar los gráficos horizontalmente aplicando la resolución de escalas independientes (`resolve_scale(y='independent')`) nos permite comparar variables dispares (milímetros contra miles de gramos) en una sola línea de visión limpia y sin distorsión de datos.
+
 ```{python}
-boxplot_culmen_length = alt.Chart(penguins).mark_boxplot().encode(
-    alt.X("sex:N", title=None, axis=alt.Axis(labelAngle=0)),
-    alt.Y("culmen_length_mm:Q", title="Culmen Length (mm)"),
-    alt.Color("sex:N", title="Sex")
-).properties(
-    width=200,
-    height=350
-).facet( # facet hace que se creen gráficos separados para cada categoría de la variable especificada
-    column=alt.Column("species:N", title="Species")
+title = alt.Title(
+    text="Distribution of Culmen Length by Species and Sex",
+    subtitle="Boxplots showing median and variability of penguin culmen length (mm)",
+    anchor="start"
 )
 
-boxplot_culmen_length
-```
-
-```{python}
-boxplot_culmen_depth = alt.Chart(penguins).mark_boxplot().encode(
-    alt.X("sex:N", title=None, axis=alt.Axis(labelAngle=0)),
-    alt.Y("culmen_depth_mm:Q", title="Culmen Depth (mm)"),
-    alt.Color("sex:N", title="Sex")
+base = alt.Chart(penguins).mark_boxplot(size=40).encode(
+    x=alt.X(
+        "sex:N",
+        title=None,
+        axis=alt.Axis(labelAngle=0),
+    ),
+    y=alt.Y(
+        "culmen_length_mm:Q",
+        title="Culmen Length (mm)",
+        scale=alt.Scale(domain=[30, 60]),
+        axis=alt.Axis(format=",.0f")
+    ),
+    color=alt.Color("sex:N", title="Sex")
 ).properties(
-    width=200,
+    width=220,
     height=350
-).facet( # facet hace que se creen gráficos separados para cada categoría de la variable especificada
-    column=alt.Column("species:N", title="Species")
 )
 
-boxplot_culmen_depth
-```
-
-```{python}
-boxplot_flipper_length = alt.Chart(penguins).mark_boxplot().encode(
-    alt.X("sex:N", title=None, axis=alt.Axis(labelAngle=0)),
-    alt.Y("flipper_length_mm:Q", title="Flipper Length (mm)"),
-    alt.Color("sex:N", title="Sex")
+boxplot = base.facet(
+    column=alt.Column(
+        "species:N",
+        title="Species"
+    )
 ).properties(
-    width=200,
-    height=350
-).facet( # facet hace que se creen gráficos separados para cada categoría de la variable especificada
-    column=alt.Column("species:N", title="Species")
+    title=title
 )
 
-boxplot_flipper_length
+boxplot
 ```
 
+> Sí existen diferencias claras entre sexos en **culmen_length_mm**: en las tres especies los **machos presentan mayores longitudes de culmen** que las hembras, con separación visible en las medianas. El **boxplot** es adecuado porque permite comparar distribuciones, dispersión y posibles solapamientos entre las dos categorías (FEMALE vs MALE).
+
 ```{python}
-boxplot_bodymass_sex = alt.Chart(penguins).mark_boxplot().encode(
-    alt.X("sex:N", title=None, axis=alt.Axis(labelAngle=0)),
-    alt.Y("body_mass_g:Q", title="Body Mass (g)"),
-    alt.Color("sex:N", title="Sex")
-).properties(
-    width=200,
-    height=350
-).facet( # facet hace que se creen gráficos separados para cada categoría de la variable especificada
-    column=alt.Column("species:N", title="Species")
+title = alt.Title(
+    text="Distribution of Culmen Depth by Species and Sex",
+    subtitle="Boxplots showing median and variability of penguin culmen depth (mm)",
+    anchor="start"
 )
 
-boxplot_bodymass_sex
+base = alt.Chart(penguins).mark_boxplot(size=40).encode(
+    x=alt.X(
+        "sex:N",
+        title=None,
+        axis=alt.Axis(labelAngle=0),
+    ),
+    y=alt.Y(
+        "culmen_depth_mm:Q",
+        title="Culmen Depth (mm)",
+        scale=alt.Scale(domain=[12, 22]),
+        axis=alt.Axis(format=",.0f")
+    ),
+    color=alt.Color("sex:N", title="Sex")
+).properties(
+    width=220,
+    height=350
+)
+
+boxplot = base.facet(
+    column=alt.Column(
+        "species:N",
+        title="Species"
+    )
+).properties(
+    title=title
+)
+
+boxplot
 ```
 
+> En **culmen_depth_mm** también se observan diferencias claras: los **machos presentan mayor profundidad de culmen** que las hembras en las tres especies, con separación consistente en las medianas. El boxplot permite comparar simultáneamente tendencia central y dispersión entre sexos dentro de cada especie.
+
 ```{python}
-alt.Chart(penguins).mark_bar().encode(
+title = alt.Title(
+    text="Distribution of Flipper Length by Species and Sex",
+    subtitle="Boxplots showing median and variability of penguin flipper length (mm)",
+    anchor="start"
+)
+
+base = alt.Chart(penguins).mark_boxplot(size=40).encode(
+    x=alt.X(
+        "sex:N",
+        title=None,
+        axis=alt.Axis(labelAngle=0),
+    ),
+    y=alt.Y(
+        "flipper_length_mm:Q",
+        title="Flipper Length (mm)",
+        scale=alt.Scale(domain=[170, 240]),
+        axis=alt.Axis(format=",.0f")
+    ),
+    color=alt.Color("sex:N", title="Sex")
+).properties(
+    width=220,
+    height=350
+)
+
+boxplot = base.facet(
+    column=alt.Column(
+        "species:N",
+        title="Species"
+    )
+).properties(
+    title=title
+)
+
+boxplot
+```
+
+> En **flipper_length_mm** se observan diferencias claras y consistentes: los **machos tienen aletas más largas** que las hembras en las tres especies. El boxplot permite visualizar claramente la separación de medianas y la variabilidad dentro de cada sexo.
+
+```{python}
+title = alt.Title(
+    text="Distribution of Body Mass by Species and Sex",
+    subtitle="Boxplots showing median and variability of penguin body mass (g)",
+    anchor="start"
+)
+
+base = alt.Chart(penguins).mark_boxplot(size=40).encode(
+    x=alt.X(
+        "sex:N",
+        title=None,
+        axis=alt.Axis(labelAngle=0),
+    ),
+    y=alt.Y(
+        "body_mass_g:Q",
+        title="Body Mass (g)",
+        scale=alt.Scale(domain=[2500, 6500]),
+        axis=alt.Axis(format=",.0f")
+    ),
+    color=alt.Color("sex:N", title="Sex")
+).properties(
+    width=220,
+    height=350
+)
+
+boxplot = base.facet(
+    column=alt.Column(
+        "species:N",
+        title="Species"
+    )
+).properties(
+    title=title
+)
+
+boxplot
+```
+
+> En **body_mass_g** se observan diferencias claras entre sexos: los **machos presentan mayor masa corporal** que las hembras en las tres especies, con separación consistente en las medianas. El boxplot es adecuado porque permite comparar tendencia central y dispersión entre las dos categorías dentro de cada especie.
+
+```{python}
+title = alt.Title(
+    text="Penguin Count by Species and Sex",
+    subtitle="Grouped bar chart showing number of individuals",
+    anchor="start"
+)
+
+base = alt.Chart(penguins).mark_bar().encode(
     x=alt.X("sex:N", title="Sex", axis=alt.Axis(labelAngle=0)),
-    y=alt.Y("count():Q", title="Count of Penguins"),
+    y=alt.Y("count():Q", title="Count of Penguins",scale=alt.Scale(domain=[0, 80])),
     color=alt.Color("species:N", title="Species"),
-    xOffset="species:N"
-).properties(
+    xOffset="species:N"   
+)
+
+bars = base.mark_bar(size=55)
+
+labels = base.mark_text(
+    dy=-6,
+    size=11,
+    #fontWeight="bold"
+).encode(
+    text="count():Q",
+    color='species:N'
+)
+
+chart = (bars + labels).properties(
     width=500,
-    height=350
-).interactive()
+    height=350,
+    title=title
+)
+
+chart
 ```
 
+> El conteo por especie muestra una distribución relativamente balanceada entre sexos, especialmente en **Adelie** y **Chinstrap**. En **Gentoo** se observa una ligera mayor presencia de machos que de hembras, aunque la diferencia no es marcada.
+
 ```{python}
-alt.Chart(penguins).mark_bar().encode(
-    x=alt.X("island:N", title="Island"),
-    y=alt.Y("count():Q", title="Count of Penguins"),
-    color=alt.Color("sex:N", title="Sex"),
-    xOffset="sex:N"
-).facet(
-    column=alt.Column("species:N", title="Species")
+title = alt.Title(
+    text="Penguin Count by Island, Sex and species",
+    subtitle="Grouped bar charts by species",
+    anchor="start"
 )
+
+base = alt.Chart(penguins).encode(
+    x=alt.X(
+        "island:N",
+        title="Island",
+        sort=["Biscoe", "Dream", "Torgersen"],
+        axis=alt.Axis(labelAngle=0)
+    ),
+    y=alt.Y(
+        "count():Q",
+        title="Number of Penguins",
+        scale=alt.Scale(domain=[0, 70]),
+        axis=alt.Axis(format=",.0f")
+    ),
+    color=alt.Color(
+        "sex:N",
+        title="Sex",
+        scale=alt.Scale(scheme="tableau10")
+    ),
+    xOffset="sex:N"
+)
+
+bars = base.mark_bar(size=30)
+
+labels = base.mark_text(
+    dy=-6,
+    size=10,
+    # fontWeight="bold"
+).encode(
+    text="count():Q",
+    color='sex:N'
+)
+
+chart = (bars + labels).properties(
+    width=220,
+    height=350
+).facet(
+    column=alt.Column(
+        "species:N",
+        title="Species",
+        sort=["Adelie", "Chinstrap", "Gentoo"]
+    )
+).properties(
+    title=title
+)
+
+chart
 ```
+
+> El conteo por especie muestra una distribución relativamente balanceada entre sexos, especialmente en **Adelie** y **Chinstrap**. En **Gentoo** se observa una ligera mayor presencia de machos que de hembras, aunque la diferencia no es marcada.
 
